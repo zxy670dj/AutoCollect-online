@@ -1,112 +1,96 @@
---== AUTO COLLECT GUI AND LOGIC ==--
-
 local isOn = false
 
--- GUI setup
+-- UI Setup
 local GUI = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
-GUI.Name = "autocollect_gui"
-GUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+GUI.Name = "autoCollectGui"
 
-local Frame = Instance.new("Frame", GUI)
-Frame.Size = UDim2.new(0, 220, 0, 100)
-Frame.Position = UDim2.new(0.4, 0, 0.35, 0)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 102)
+Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-Frame.BorderSizePixel = 0
+Frame.Parent = GUI
 
-Instance.new("UICorner", Frame)
-Instance.new("UIDragDetector", Frame)
+local UIDragDetector = Instance.new("UIDragDetector")
+UIDragDetector.Parent = Frame
 
-local TitleBar = Instance.new("Frame", Frame)
-TitleBar.Size = UDim2.new(1, 0, 0, 25)
-TitleBar.BackgroundColor3 = Color3.fromRGB(122, 122, 122)
-Instance.new("UICorner", TitleBar)
+local UICorner = Instance.new("UICorner")
+UICorner.Parent = Frame
 
-local Title = Instance.new("TextLabel", TitleBar)
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(3, 70, 255)
+UIStroke.Thickness = 3
+UIStroke.Parent = Frame
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 23)
+Header.BackgroundColor3 = Color3.fromRGB(122, 122, 122)
+Header.Parent = Frame
+
+local UICornerHeader = Instance.new("UICorner")
+UICornerHeader.Parent = Header
+
+local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "auto-collect"
+Title.Text = "Auto-collect"
 Title.TextColor3 = Color3.new(0, 0, 0)
 Title.TextScaled = true
+Title.Font = Enum.Font.Sarpanch
+Title.Parent = Header
 
-local Button = Instance.new("TextButton", Frame)
-Button.Size = UDim2.new(0, 128, 0, 34)
-Button.Position = UDim2.new(0.5, -64, 0.5, 0)
-Button.BackgroundColor3 = Color3.fromRGB(162, 162, 162)
-Button.Text = "off"
-Button.TextScaled = true
-Instance.new("UICorner", Button)
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0, 128, 0, 34)
+Toggle.Position = UDim2.new(0.209, 0, 0.412, 0)
+Toggle.BackgroundColor3 = Color3.fromRGB(162, 162, 162)
+Toggle.Text = "Off"
+Toggle.TextColor3 = Color3.new(0, 0, 0)
+Toggle.TextScaled = true
+Toggle.Font = Enum.Font.SourceSans
+Toggle.Parent = Frame
 
--- Toggle auto-collect
-Button.MouseButton1Click:Connect(function()
+local UICornerToggle = Instance.new("UICorner")
+UICornerToggle.Parent = Toggle
+
+Toggle.MouseButton1Click:Connect(function()
 	isOn = not isOn
-	Button.Text = isOn and "on" or "off"
+	Toggle.Text = isOn and "On" or "Off"
 end)
 
---== COLLECT LOGIC ==--
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
+-- Utility functions
 local function getCharacter()
-	local char = player.Character or player.CharacterAdded:Wait()
-	local hum = char:WaitForChild("Humanoid")
+	local plr = game.Players.LocalPlayer
+	local char = plr.Character or plr.CharacterAdded:Wait()
 	local root = char:WaitForChild("HumanoidRootPart")
-	return char, hum, root
+	local humanoid = char:WaitForChild("Humanoid")
+	return char, humanoid, root
 end
 
-local function goTo(position)
-	local _, hum = getCharacter()
-	hum:MoveTo(position)
-	hum.MoveToFinished:Wait()
+local function goTo(pos)
+	local _, humanoid, _ = getCharacter()
+	humanoid:MoveTo(pos)
 end
 
-local function findNearestTree()
+local function findNearestNewPartGlobal()
 	local _, _, root = getCharacter()
 	local treesFolder = workspace:FindFirstChild("trees")
 	if not treesFolder then return nil end
 
-	local nearestTree = nil
-	local shortestDist = math.huge
-
-	for _, tree in ipairs(treesFolder:GetChildren()) do
-		local treePos
-		if tree:IsA("Model") then
-			treePos = tree.PrimaryPart and tree.PrimaryPart.Position or tree:FindFirstChildWhichIsA("BasePart") and tree:FindFirstChildWhichIsA("BasePart").Position
-		elseif tree:IsA("BasePart") then
-			treePos = tree.Position
-		end
-
-		if treePos then
-			local dist = (treePos - root.Position).Magnitude
-			if dist < shortestDist then
-				shortestDist = dist
-				nearestTree = tree
-			end
-		end
-	end
-
-	return nearestTree
-end
-
-local function findNearestNewPart(tree)
-	if not tree then return nil end
-	local _, _, root = getCharacter()
-
-	local droppedFood = tree:FindFirstChild("dropped_food")
-	if not droppedFood then return nil end
-
-	local newPartFolder = droppedFood:FindFirstChild("new_part")
-	if not newPartFolder then return nil end
-
 	local nearestPart = nil
 	local shortestDist = math.huge
 
-	for _, part in ipairs(newPartFolder:GetChildren()) do
-		if part:IsA("BasePart") then
-			local dist = (part.Position - root.Position).Magnitude
-			if dist < shortestDist then
-				shortestDist = dist
-				nearestPart = part
+	for _, tree in ipairs(treesFolder:GetChildren()) do
+		local droppedFood = tree:FindFirstChild("dropped_food")
+		local newPartFolder = droppedFood and droppedFood:FindFirstChild("new_part")
+
+		if newPartFolder then
+			for _, part in ipairs(newPartFolder:GetChildren()) do
+				if part:IsA("BasePart") then
+					local dist = (part.Position - root.Position).Magnitude
+					if dist < shortestDist then
+						shortestDist = dist
+						nearestPart = part
+					end
+				end
 			end
 		end
 	end
@@ -114,35 +98,24 @@ local function findNearestNewPart(tree)
 	return nearestPart
 end
 
---== AUTO LOOP ==--
-
+-- Main loop
 task.spawn(function()
 	while true do
 		task.wait(0.1)
 		if not isOn then continue end
 
-		local tree = findNearestTree()
-		if not tree then task.wait(1) continue end
-
-		-- Go to tree
-		local treePart = tree:IsA("Model") and (tree.PrimaryPart or tree:FindFirstChildWhichIsA("BasePart"))
-			or (tree:IsA("BasePart") and tree)
-		if treePart then goTo(treePart.Position) end
-
-		-- Collect parts from tree
-		while true do
-			local part = findNearestNewPart(tree)
-			if not part then break end
+		local part = findNearestNewPartGlobal()
+		if part then
 			goTo(part.Position)
 
-			-- Simulate collecting (replace this if needed)
+			repeat
+				task.wait(0.25)
+			until (part.Position - (getCharacter())).Magnitude < 6 or not part.Parent
+
+			-- Auto-collect: delete or interact
 			if part and part.Parent then
 				part:Destroy()
 			end
-
-			task.wait(0.2)
 		end
-
-		task.wait(0.2)
 	end
 end)
