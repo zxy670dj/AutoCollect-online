@@ -1,172 +1,148 @@
+--== AUTO COLLECT GUI AND LOGIC ==--
+
 local isOn = false
 
-local GUI = Instance.new("ScreenGui")
-GUI.Name = "GUI"
+-- GUI setup
+local GUI = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+GUI.Name = "autocollect_gui"
 GUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-GUI.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local Frame = Instance.new("Frame")
-Frame.Name = "Frame"
-Frame.Position = UDim2.new(0.343706, 0, 0.352436, 0)
-Frame.Size = UDim2.new(0, 220, 0, 102)
-Frame.BackgroundColor3 = Color3.new(0.294118, 0.294118, 0.294118)
+local Frame = Instance.new("Frame", GUI)
+Frame.Size = UDim2.new(0, 220, 0, 100)
+Frame.Position = UDim2.new(0.4, 0, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
 Frame.BorderSizePixel = 0
-Frame.BorderColor3 = Color3.new(0, 0, 0)
-Frame.Parent = GUI
 
-local UIDragDetector = Instance.new("UIDragDetector")
-UIDragDetector.Name = "UIDragDetector"
-UIDragDetector.Parent = Frame
+Instance.new("UICorner", Frame)
+Instance.new("UIDragDetector", Frame)
 
-local UICorner = Instance.new("UICorner")
-UICorner.Name = "UICorner"
+local TitleBar = Instance.new("Frame", Frame)
+TitleBar.Size = UDim2.new(1, 0, 0, 25)
+TitleBar.BackgroundColor3 = Color3.fromRGB(122, 122, 122)
+Instance.new("UICorner", TitleBar)
 
-UICorner.Parent = Frame
+local Title = Instance.new("TextLabel", TitleBar)
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "auto-collect"
+Title.TextColor3 = Color3.new(0, 0, 0)
+Title.TextScaled = true
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Name = "UIStroke"
-UIStroke.Color = Color3.new(0.0117647, 0.27451, 1)
-UIStroke.Thickness = 3
-UIStroke.Parent = Frame
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(0, 128, 0, 34)
+Button.Position = UDim2.new(0.5, -64, 0.5, 0)
+Button.BackgroundColor3 = Color3.fromRGB(162, 162, 162)
+Button.Text = "off"
+Button.TextScaled = true
+Instance.new("UICorner", Button)
 
-local Frame2 = Instance.new("Frame")
-Frame2.Name = "Frame"
-Frame2.Size = UDim2.new(0, 220, 0, 23)
-Frame2.BackgroundColor3 = Color3.new(0.478431, 0.478431, 0.478431)
-Frame2.BorderSizePixel = 0
-Frame2.BorderColor3 = Color3.new(0, 0, 0)
-Frame2.Parent = Frame
-
-local UICorner2 = Instance.new("UICorner")
-UICorner2.Name = "UICorner"
-
-UICorner2.Parent = Frame2
-
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Name = "TextLabel"
-TextLabel.Size = UDim2.new(0, 220, 0, 23)
-TextLabel.BackgroundColor3 = Color3.new(1, 1, 1)
-TextLabel.BackgroundTransparency = 1
-TextLabel.BorderSizePixel = 0
-TextLabel.BorderColor3 = Color3.new(0, 0, 0)
-TextLabel.Transparency = 1
-TextLabel.Text = "Auto-collect"
-TextLabel.TextColor3 = Color3.new(0, 0, 0)
-TextLabel.TextSize = 14
-TextLabel.FontFace = Font.new("rbxasset://fonts/families/Sarpanch.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-TextLabel.TextScaled = true
-TextLabel.TextWrapped = true
-TextLabel.Parent = Frame2
-TextLabel.LayoutOrder = 1
-
-local Collect = Instance.new("TextButton")
-Collect.Name = "Collect"
-Collect.Position = UDim2.new(0.209091, 0, 0.411765, 0)
-Collect.Size = UDim2.new(0, 128, 0, 34)
-Collect.BackgroundColor3 = Color3.new(0.635294, 0.635294, 0.635294)
-Collect.BorderSizePixel = 0
-Collect.BorderColor3 = Color3.new(0, 0, 0)
-Collect.Text = "Off"
-Collect.TextColor3 = Color3.new(0, 0, 0)
-Collect.TextSize = 14
-Collect.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-Collect.TextScaled = true
-Collect.TextWrapped = true
-Collect.Parent = Frame
-
-local UICorner3 = Instance.new("UICorner")
-UICorner3.Name = "UICorner"
-
-UICorner3.Parent = Collect
-
-Collect.MouseButton1Click:Connect(function()
-	if not isOn then
-		Collect.Text = "On"
-		isOn = true
-	else
-		Collect.Text = "Off"
-		isOn = false
-	end
+-- Toggle auto-collect
+Button.MouseButton1Click:Connect(function()
+	isOn = not isOn
+	Button.Text = isOn and "on" or "off"
 end)
 
-local repeatPrevent = false
+--== COLLECT LOGIC ==--
 
-function goTo(part: Instance)
-	if part:IsA("Part") or part:IsA("Model") then
-		local plr = game.Players.LocalPlayer
-		local char = plr.Character or plr.CharacterAdded:Wait()
-		local hum = char:WaitForChild("Humanoid")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
-		local targetPosition
-
-		if part:IsA("Model") then
-			local primary = part.PrimaryPart or part:FindFirstChildWhichIsA("BasePart")
-			if primary then
-				targetPosition = primary.Position
-			end
-		elseif part:IsA("BasePart") then
-			targetPosition = part.Position
-		end
-
-		if targetPosition then
-			hum:MoveTo(targetPosition)
-		end
-	end
-end
-
-function nearestPart()
-	local plr = game.Players.LocalPlayer
-	local char = plr.Character or plr.CharacterAdded:Wait()
+local function getCharacter()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hum = char:WaitForChild("Humanoid")
 	local root = char:WaitForChild("HumanoidRootPart")
+	return char, hum, root
+end
 
-	local nearest = nil
-	local shortest = math.huge
+local function goTo(position)
+	local _, hum = getCharacter()
+	hum:MoveTo(position)
+	hum.MoveToFinished:Wait()
+end
 
-	-- Change "MyPartsFolder" to your folder's actual name
-	local partsFolder = workspace:FindFirstChild("Parts")
-	if not partsFolder then
-		warn("Folder 'Parts' not found in workspace")
-		return nil
-	end
+local function findNearestTree()
+	local _, _, root = getCharacter()
+	local treesFolder = workspace:FindFirstChild("trees")
+	if not treesFolder then return nil end
 
-	for _, obj in ipairs(partsFolder:GetDescendants()) do
-		if obj:IsA("BasePart") and obj.CanCollide then
-			local dist = (obj.Position - root.Position).Magnitude
-			if dist < shortest then
-				shortest = dist
-				nearest = obj
+	local nearestTree = nil
+	local shortestDist = math.huge
+
+	for _, tree in ipairs(treesFolder:GetChildren()) do
+		local treePos
+		if tree:IsA("Model") then
+			treePos = tree.PrimaryPart and tree.PrimaryPart.Position or tree:FindFirstChildWhichIsA("BasePart") and tree:FindFirstChildWhichIsA("BasePart").Position
+		elseif tree:IsA("BasePart") then
+			treePos = tree.Position
+		end
+
+		if treePos then
+			local dist = (treePos - root.Position).Magnitude
+			if dist < shortestDist then
+				shortestDist = dist
+				nearestTree = tree
 			end
 		end
 	end
 
-	return nearest
+	return nearestTree
 end
 
+local function findNearestNewPart(tree)
+	if not tree then return nil end
+	local _, _, root = getCharacter()
 
+	local droppedFood = tree:FindFirstChild("dropped_food")
+	if not droppedFood then return nil end
 
-while true do
-	task.wait(1)
+	local newPartFolder = droppedFood:FindFirstChild("new_part")
+	if not newPartFolder then return nil end
 
-	if isOn and not repeatPrevent then
-		repeatPrevent = true
-		print("Auto-collect started")
+	local nearestPart = nil
+	local shortestDist = math.huge
 
-		task.spawn(function()
-			local plr = game.Players.LocalPlayer
-			local char = plr.Character or plr.CharacterAdded:Wait()
-			local hum = char:WaitForChild("Humanoid")
+	for _, part in ipairs(newPartFolder:GetChildren()) do
+		if part:IsA("BasePart") then
+			local dist = (part.Position - root.Position).Magnitude
+			if dist < shortestDist then
+				shortestDist = dist
+				nearestPart = part
+			end
+		end
+	end
 
-			while isOn do
-				local part = nearestPart()
-				if part then
-					goTo(part)
-					hum.MoveToFinished:Wait()
-				end
-				task.wait(0.2)
+	return nearestPart
+end
+
+--== AUTO LOOP ==--
+
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		if not isOn then continue end
+
+		local tree = findNearestTree()
+		if not tree then task.wait(1) continue end
+
+		-- Go to tree
+		local treePart = tree:IsA("Model") and (tree.PrimaryPart or tree:FindFirstChildWhichIsA("BasePart"))
+			or (tree:IsA("BasePart") and tree)
+		if treePart then goTo(treePart.Position) end
+
+		-- Collect parts from tree
+		while true do
+			local part = findNearestNewPart(tree)
+			if not part then break end
+			goTo(part.Position)
+
+			-- Simulate collecting (replace this if needed)
+			if part and part.Parent then
+				part:Destroy()
 			end
 
-			print("Auto-collect stopped")
-			repeatPrevent = false
-		end)
+			task.wait(0.2)
+		end
+
+		task.wait(0.2)
 	end
-end
+end)
