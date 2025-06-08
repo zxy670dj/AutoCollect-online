@@ -2,7 +2,7 @@ local isOn = false
 
 -- UI Setup
 local GUI = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
-GUI.Name = "autoCollectGui"
+GUI.Name = "auto_collect_gui"
 
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 220, 0, 102)
@@ -56,7 +56,7 @@ Toggle.MouseButton1Click:Connect(function()
 	Toggle.Text = isOn and "On" or "Off"
 end)
 
--- Utility functions
+-- Utilities
 local function getCharacter()
 	local plr = game.Players.LocalPlayer
 	local char = plr.Character or plr.CharacterAdded:Wait()
@@ -72,22 +72,21 @@ end
 
 local function findNearestNewPartGlobal()
 	local _, _, root = getCharacter()
-	local treesFolder = workspace:FindFirstChild("trees")
-	if not treesFolder then return nil end
+	local trees = workspace:FindFirstChild("trees")
+	if not trees then return nil end
 
 	local nearestPart = nil
-	local shortestDist = math.huge
+	local minDist = math.huge
 
-	for _, tree in ipairs(treesFolder:GetChildren()) do
-		local droppedFood = tree:FindFirstChild("dropped_food")
-		local newPartFolder = droppedFood and droppedFood:FindFirstChild("new_part")
-
-		if newPartFolder then
-			for _, part in ipairs(newPartFolder:GetChildren()) do
+	for _, tree in ipairs(trees:GetChildren()) do
+		local dropped = tree:FindFirstChild("dropped_food")
+		local newFolder = dropped and dropped:FindFirstChild("new_part")
+		if newFolder then
+			for _, part in ipairs(newFolder:GetChildren()) do
 				if part:IsA("BasePart") then
 					local dist = (part.Position - root.Position).Magnitude
-					if dist < shortestDist then
-						shortestDist = dist
+					if dist < minDist then
+						minDist = dist
 						nearestPart = part
 					end
 				end
@@ -110,12 +109,9 @@ task.spawn(function()
 
 			repeat
 				task.wait(0.25)
-			until (part.Position - (getCharacter())).Magnitude < 6 or not part.Parent
-
-			-- Auto-collect: delete or interact
-			if part and part.Parent then
-				part:Destroy()
-			end
+			until (part.Position - getCharacter()).Magnitude < 6 or not part:IsDescendantOf(workspace)
+			
+			-- Don't delete the part; just walk to it
 		end
 	end
 end)
